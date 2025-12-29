@@ -113,23 +113,57 @@ int my_strlen(const char *str)
   return len;
 }
 
+// Minimal va_list implementation without headers
+typedef char *va_list;
+
+#define va_start(ap, last) (ap = (char *)&last + sizeof(last))
+#define va_arg(ap, type) (*(type *)((ap += sizeof(type)) - sizeof(type)))
+#define va_end(ap) (ap = (va_list)0)
+
 void my_printf(const char *format, ...)
 {
-  va_list args;
-  va_start(args, format);
-  while (*format)
-  {
-    if (*format == '%')
+    va_list args;
+    va_start(args, format);
+
+    char buffer[128];
+
+    while (*format)
     {
-      format++;
-      if (*format == 'd')
-      {
-        int val = va_arg(args, int);
-      }
+        if (*format == '%')
+        {
+            format++;
+            if (*format == 'd')
+            {
+                int val = va_arg(args, int);
+                itoa(val, buffer);
+                write(1, buffer, my_strlen(buffer));
+            }
+            else if (*format == 'f')
+            {
+                float val = va_arg(args, double); // floats promoted to double
+                ftoa(val, buffer, 6);
+                write(1, buffer, my_strlen(buffer));
+            }
+            else if (*format == 's')
+            {
+                char *val = va_arg(args, char *);
+                write(1, val, my_strlen(val));
+            }
+            else
+            {
+                write(1, format, 1);
+            }
+        }
+        else
+        {
+            write(1, format, 1);
+        }
+        format++;
     }
-  }
-  // write(1, format, my_strlen(format));
+
+    va_end(args);
 }
+
 
 int main()
 {
